@@ -1,0 +1,2 @@
+ALTER TABLE "ojtclassroom-finalproj_report" ADD COLUMN "task_id" integer;--> statement-breakpoint
+ALTER TABLE "ojtclassroom-finalproj_report" ADD CONSTRAINT "ojtclassroom-finalproj_report_task_id_ojtclassroom-finalproj_task_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."ojtclassroom-finalproj_task"("id") ON DELETE no action ON UPDATE no action;

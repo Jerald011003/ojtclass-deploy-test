@@ -1,0 +1,1 @@
+ALTER TABLE "ojtclassroom-finalproj_classroom" ADD COLUMN "ojt_hours" integer DEFAULT 600;

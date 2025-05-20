@@ -1,0 +1,1 @@
+ALTER TABLE "ojtclassroom-finalproj_time_entry" ALTER COLUMN "hours" SET DATA TYPE numeric(4, 2);

@@ -1,0 +1,185 @@
+import { auth } from "@clerk/nextjs/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { db } from "~/server/db";
+import { users, classrooms, studentClassrooms } from "~/server/db/schema";
+import { eq, and } from "drizzle-orm";
+
+export type ClassroomParams = {
+  params: {
+    id: string;
+  };
+};
+
+export async function GET(
+  request: NextRequest,
+  { params }: ClassroomParams
+) {
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json(
+        { message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Get the admin user
+    const adminUser = await db.query.users.findFirst({
+      where: eq(users.clerkId, userId),
+    });
+
+    if (!adminUser || adminUser.role !== "professor") {
+      return NextResponse.json(
+        { message: "Only professors can view classroom details" },
+        { status: 403 }
+      );
+    }
+
+    const classroomId = parseInt(params.id);
+
+    // Get classroom details
+    const classroom = await db.query.classrooms.findFirst({
+      where: and(
+        eq(classrooms.id, classroomId),
+        eq(classrooms.professorId, adminUser.id)
+      ),
+      with: {
+        professor: true,
+      },
+    });
+
+    if (!classroom) {
+      return NextResponse.json(
+        { message: "Classroom not found or you don't have permission to view it" },
+        { status: 404 }
+      );
+    }
+
+    // Get student enrollments
+    const enrollments = await db
+      .select({
+        student: {
+          id: users.id,
+          email: users.email,
+        },
+        progress: studentClassrooms.status,
+      })
+      .from(studentClassrooms)
+      .where(eq(studentClassrooms.classroomId, classroomId))
+      .innerJoin(users, eq(users.id, studentClassrooms.studentId));
+
+    // Transform the data to include student progress
+    const transformedClassroom = {
+      ...classroom,
+      students: enrollments.map((enrollment) => ({
+        id: enrollment.student.id,
+        name: enrollment.student.email,
+        email: enrollment.student.email,
+        progress: enrollment.progress || 0,
+      })),
+    };
+
+    return NextResponse.json(transformedClassroom);
+  } catch (error) {
+    console.error("Error fetching classroom details:", error);
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: ClassroomParams
+) {
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json(
+        { message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Get the admin user
+    const adminUser = await db.query.users.findFirst({
+      where: eq(users.clerkId, userId),
+    });
+
+    if (!adminUser || adminUser.role !== "professor") {
+      return NextResponse.json(
+        { message: "Only professors can update classrooms" },
+        { status: 403 }
+      );
+    }
+
+    const classroomId = parseInt(params.id);
+    const updates = await request.json();
+
+    // Update classroom details
+    await db.update(classrooms)
+      .set({
+        name: updates.name,
+        description: updates.description,
+        isActive: updates.isActive,
+      })
+      .where(eq(classrooms.id, classroomId));
+
+    return NextResponse.json({ message: "Classroom updated successfully" });
+  } catch (error) {
+    console.error("Error updating classroom:", error);
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: ClassroomParams
+) {
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json(
+        { message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Get the admin user
+    const adminUser = await db.query.users.findFirst({
+      where: eq(users.clerkId, userId),
+    });
+
+    if (!adminUser || adminUser.role !== "professor") {
+      return NextResponse.json(
+        { message: "Only professors can delete classrooms" },
+        { status: 403 }
+      );
+    }
+
+    const classroomId = parseInt(params.id);
+
+    // First delete all student enrollments
+    await db.delete(studentClassrooms)
+      .where(eq(studentClassrooms.classroomId, classroomId));
+
+    // Then delete the classroom
+    await db.delete(classrooms)
+      .where(eq(classrooms.id, classroomId));
+
+    return NextResponse.json({ message: "Classroom deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting classroom:", error);
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
