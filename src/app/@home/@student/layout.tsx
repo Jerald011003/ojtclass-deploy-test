@@ -26,7 +26,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: Home, current: pathname === '/' },
+    { name: 'Dashboard', href: '/dashboard', icon: Home, current: pathname === '/dashboard' },
     // { name: 'Calendar', href: '/calendar', icon: Calendar, current: pathname === '/calendar' },
     { name: 'Progress', href: '/progress', icon: BarChart2, current: pathname === '/progress' },
     { name: 'Reports', href: '/reports', icon: FileText, current: pathname === '/reports' },
