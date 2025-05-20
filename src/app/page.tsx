@@ -11,17 +11,22 @@ export default async function RootPage() {
     return <div className="hidden">Auth slot will be shown</div>;
   }
   
-  const user = await db.query.users.findFirst({
-    where: eq(users.clerkId, userId),
-  });
-  
-  if (!user || !user.role) {
+  try {
+    const user = await db.query.users.findFirst({
+      where: eq(users.clerkId, userId),
+    });
+    
+    if (user && user.role) {
+      if (user.role === "professor") {
+        return <div className="hidden">Professor slot will be shown</div>;
+      } else {
+        return <div className="hidden">Student slot will be shown</div>;
+      }
+    }
+    
     redirect("/role-selection");
-  }
-  
-  if (user.role === "professor") {
-    return <div className="hidden">Professor slot will be shown</div>;
-  } else {
-    return <div className="hidden">Student slot will be shown</div>;
+  } catch (error) {
+    console.error("Database error:", error);
+    return <div>Error connecting to database. Please try again later.</div>;
   }
 }

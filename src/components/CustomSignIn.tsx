@@ -23,11 +23,11 @@ export function CustomSignIn() {
           socialButtonsVariant: 'iconButton'
         }
       }}
-      path="/sign-in"
+      path="/"
       signUpUrl="/sign-up"
       routing="path"
-      redirectUrl="/dashboard-redirect"
-      afterSignInUrl="/dashboard-redirect"
+      redirectUrl="/"
+      afterSignInUrl="/"
     />
   );
 }
