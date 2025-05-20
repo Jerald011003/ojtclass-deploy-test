@@ -63,7 +63,6 @@ export default function ProfStudentsPage() {
       try {
         setIsLoading(true);
         
-        // First fetch classrooms
         const classroomsResponse = await fetch('/api/prof/companies/classrooms', {
           headers: { 'Cache-Control': 'no-cache' }
         });

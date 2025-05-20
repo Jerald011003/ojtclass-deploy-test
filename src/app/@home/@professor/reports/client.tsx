@@ -44,7 +44,6 @@ export default function ReportsClientPage() {
   const { userId, isLoaded } = useAuth();
   const router = useRouter();
 
-  // State management
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
