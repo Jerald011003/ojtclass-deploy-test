@@ -51,11 +51,10 @@ export default function HomeLayout({
   
   const userRole = user.unsafeMetadata.role as string | undefined;
   
-  // Fix: Don't wrap the professor content in a div that overrides its layout
   if (userRole === 'professor') {
-    return <>{professor}</>;  // Simply return the professor slot
+    return <>{professor}</>; 
   } else if (userRole === 'student') {
-    return <>{student}</>;    // Simply return the student slot
+    return <>{student}</>;   
   }
   
   return (
