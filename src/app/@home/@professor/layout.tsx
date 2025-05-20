@@ -24,7 +24,7 @@ export default function ProfLayout({ children }: ProfLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: Home, current: pathname === '/' },
+  { name: 'Dashboard', href: '/dashboard', icon: Home, current: pathname === '/dashboard' },
   { name: 'Company Classrooms', href: '/companies', icon: Building2, current: pathname === '/companies' },
   { name: 'Students', href: '/students', icon: Users, current: pathname === '/students' },
   { name: 'Reports', href: '/reports', icon: FileText, current: pathname === '/reports' },

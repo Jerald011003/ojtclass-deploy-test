@@ -282,7 +282,7 @@ export default function ProfessorPage() {
       <ProfNavbar />
       
       {/* Main content with proper top padding to avoid navbar overlap */}
-      <main className="pt-16 px-4 sm:px-6 lg:px-8">
+      <main className="pt-1 px-2 sm:px-6 lg:px-1">
         {/* Title Section */}
         <div className="mb-8 mt-4">
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
