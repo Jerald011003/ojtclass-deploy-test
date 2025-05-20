@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from "@clerk/nextjs";
-import ProfessorView from "../_components/ProfessorView";
+import ProfessorView from "./components/ProfessorView";
 
 export default function ProfessorPage() {
   const { user } = useUser();
