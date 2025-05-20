@@ -27,6 +27,6 @@ export default async function RootPage() {
     redirect("/role-selection");
   } catch (error) {
     console.error("Database error:", error);
-    return <div>Error connecting to database. Please try again later.</div>;
+    return null;
   }
 }

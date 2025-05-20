@@ -2,7 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Navbar from "~/components/Navbar";
 import Loading from "~/components/Loading";
 
@@ -18,17 +18,33 @@ export default function HomeLayout({
   const { user, isLoaded } = useUser();
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+  
+  // Skip authentication checks if we're on the role-selection page
+  const isRoleSelectionPage = pathname === "/role-selection";
   
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   useEffect(() => {
-    if (isClient && isLoaded && user && !user.unsafeMetadata.role) {
+    // Don't redirect if already on role-selection page
+    if (isClient && isLoaded && user && !user.unsafeMetadata.role && !isRoleSelectionPage) {
       router.push('/role-selection');
     }
-  }, [isLoaded, user, router, isClient]);
+  }, [isLoaded, user, router, isClient, isRoleSelectionPage]);
   
+  // Skip loading screen if on role-selection
+  if (isRoleSelectionPage) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1">{children}</div>
+      </div>
+    );
+  }
+  
+  // Regular authentication flow for non-role-selection pages
   if (!isClient || !isLoaded) {
     return <Loading />;
   }
