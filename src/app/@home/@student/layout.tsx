@@ -22,8 +22,8 @@ interface StudentLayoutProps {
 export default function StudentLayout({ children }: StudentLayoutProps) {
   const { isLoaded } = useUser();
   const [mounted, setMounted] = useState(false);
-  const [pathname, setPathname] = useState('/');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname(); // Direct use of usePathname() hook
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home, current: pathname === '/dashboard' },
@@ -35,9 +35,6 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
 
   useEffect(() => {
     setMounted(true);
-    if (typeof window !== 'undefined') {
-      setPathname(window.location.pathname);
-    }
   }, []);
 
   if (!mounted || !isLoaded) {
