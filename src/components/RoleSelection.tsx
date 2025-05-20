@@ -1,26 +1,57 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
 export default function RoleSelectionPage() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const router = useRouter();
   const [role, setRole] = useState<"student" | "professor" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // if (!isLoaded) {
-  //   return <div>Loading...</div>;
-  // }
-
-  if (!user) {
-    router.push('/sign-in');
-    return null;
+  
+  // Handle auth redirect after component is mounted and with a delay
+  useEffect(() => {
+    if (isLoaded && !user) {
+      const redirectTimer = setTimeout(() => {
+        router.push('/sign-in');
+      }, 500);
+      
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [isLoaded, user, router]);
+  
+  // While loading, show a placeholder instead of redirecting
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-600 via-blue-500 to-blue-400 p-4">
+        <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full space-y-8">
+          <div className="flex flex-col items-center">
+            <div className="relative w-24 h-24 mb-4">
+              <div className="animate-pulse bg-gray-200 rounded-full w-full h-full"></div>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 text-center">Loading...</h2>
+          </div>
+        </div>
+      </div>
+    );
   }
-
+  
+  // If user is loaded but doesn't exist, show placeholder while redirect happens
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-600 via-blue-500 to-blue-400 p-4">
+        <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full space-y-8">
+          <div className="flex flex-col items-center">
+            <h2 className="text-2xl font-bold text-gray-900 text-center">Redirecting...</h2>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
