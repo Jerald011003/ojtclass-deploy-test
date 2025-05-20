@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Book, FileCheck, Video, Bell, UserPlus, Loader2, Menu } from 'lucide-react';
+import { Users, Book, FileCheck, Video, Bell, UserPlus, Loader2 } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -47,7 +47,6 @@ export default function ProfessorPage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,15 +61,6 @@ export default function ProfessorPage() {
   const [completedEvals, setCompletedEvals] = useState(0);
 
   const [studentProgress, setStudentProgress] = useState<Record<number, number>>({});
-
-  // Navigation items for sidebar
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: Users, current: pathname === '/dashboard' },
-    { name: 'Classrooms', href: '/companies', icon: Book, current: pathname === '/companies' },
-    { name: 'Reports', href: '/reports', icon: FileCheck, current: pathname === '/reports' },
-    { name: 'Students', href: '/students', icon: UserPlus, current: pathname === '/students' },
-    { name: 'Meetings', href: '/meetings', icon: Video, current: pathname === '/meetings' },
-  ];
 
   // Keep all your existing fetchClassrooms logic
   const fetchClassrooms = async () => {
@@ -274,299 +264,190 @@ export default function ProfessorPage() {
 
   if (error) {
     return (
-      <div className="h-screen flex overflow-hidden bg-gray-100">
-        {/* Include sidebar and navbar even on error */}
-        <div className="hidden md:flex md:flex-shrink-0">
-          <div className="flex flex-col w-64">
-            <div className="flex flex-col h-0 flex-1 border-r border-gray-200 bg-white">
-              <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-                <div className="flex items-center flex-shrink-0 px-4">
-                  <h1 className="text-blue-600 text-xl font-bold">TrainTrackDesk</h1>
-                </div>
-                <nav className="mt-5 flex-1 px-2 space-y-1">
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                        item.current ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                      }`}
-                    >
-                      <item.icon
-                        className={`mr-3 h-6 w-6 ${
-                          item.current ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'
-                        }`}
-                        aria-hidden="true"
-                      />
-                      {item.name}
-                    </Link>
-                  ))}
-                </nav>
-              </div>
-            </div>
+      <div className="min-h-screen bg-gray-100">
+        <ProfNavbar />
+        <main className="pt-16 px-4 sm:px-6 lg:px-8">
+          <div className="bg-red-50 text-red-700 p-4 rounded-lg mt-4">
+            Error: {error}
           </div>
-        </div>
-
-        <div className="flex flex-col w-0 flex-1 overflow-hidden">
-          <ProfNavbar />
-          <main className="flex-1 p-8">
-            <div className="bg-red-50 text-red-700 p-4 rounded-lg">
-              Error: {error}
-            </div>
-          </main>
-        </div>
+        </main>
       </div>
     );
   }
 
-  // THE KEY CHANGE: Wrap your existing content in the layout structure
+  // Return just navbar and main content with proper margins
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-100">
-      {/* Mobile sidebar */}
-      <div className={`md:hidden fixed inset-0 flex z-40 ${sidebarOpen ? 'block' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)}></div>
-        <div className="relative flex-1 flex flex-col max-w-xs w-full pt-5 pb-4 bg-white">
-          <div className="flex-shrink-0 flex items-center px-4">
-            <h1 className="text-blue-600 text-xl font-bold">TrainTrackDesk</h1>
-          </div>
-          <nav className="mt-5 px-2 space-y-1">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                  item.current ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <item.icon
-                  className={`mr-3 h-6 w-6 ${
-                    item.current ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'
-                  }`}
-                  aria-hidden="true"
-                />
-                {item.name}
-              </Link>
-            ))}
-          </nav>
+    <div className="min-h-screen bg-gray-100">
+      {/* Top navbar only */}
+      <ProfNavbar />
+      
+      {/* Main content with proper top padding to avoid navbar overlap */}
+      <main className="pt-16 px-4 sm:px-6 lg:px-8">
+        {/* Title Section */}
+        <div className="mb-8 mt-4">
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-1">Manage your students and see all progress</p>
         </div>
-      </div>
 
-      {/* Desktop sidebar */}
-      <div className="hidden md:flex md:flex-shrink-0">
-        <div className="flex flex-col w-64">
-          <div className="flex flex-col h-0 flex-1 border-r border-gray-200 bg-white">
-            <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-              <div className="flex items-center flex-shrink-0 px-4">
-                <h1 className="text-blue-600 text-xl font-bold">TrainTrackDesk</h1>
-              </div>
-              <nav className="mt-5 flex-1 px-2 space-y-1">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                      item.current ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    }`}
-                  >
-                    <item.icon
-                      className={`mr-3 h-6 w-6 ${
-                        item.current ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'
-                      }`}
-                      aria-hidden="true"
-                    />
-                    {item.name}
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center space-x-3 mb-2">
+              <Users className="w-6 h-6 text-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Total Students</h3>
+            </div>
+            <p className="text-3xl font-bold text-gray-900">{totalStudents || 0}</p>
+            <p className="text-sm text-gray-600 mt-1">Active trainees</p>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center space-x-3 mb-2">
+              <Book className="w-6 h-6 text-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Reports</h3>
+            </div>
+            <p className="text-3xl font-bold text-gray-900">{pendingReports || 0}</p>
+            <p className="text-sm text-gray-600 mt-1">Pending reviews</p>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center space-x-3 mb-2">
+              <FileCheck className="w-6 h-6 text-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Evaluations</h3>
+            </div>
+            <p className="text-3xl font-bold text-gray-900">{completedEvals || 0}</p>
+            <p className="text-sm text-gray-600 mt-1">Completed this semester</p>
+          </div>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Student List */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900">Students</h2>
+                  <Link href="/students" className="flex items-center space-x-2 text-blue-600 hover:text-blue-700">
+                    <UserPlus className="w-5 h-5" />
+                    <span>Manage Students</span>
                   </Link>
-                ))}
-              </nav>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="flex flex-col w-0 flex-1 overflow-hidden">
-        {/* Top navbar */}
-        <ProfNavbar />
-        
-        <div className="md:hidden pl-1 pt-1 sm:pl-3 sm:pt-3">
-          <button
-            className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <span className="sr-only">Open sidebar</span>
-            <Menu className="h-6 w-6" aria-hidden="true" />
-          </button>
-        </div>
-        
-        {/* Your existing dashboard content */}
-        <main className="flex-1 p-8">
-          {/* Title Section */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600 mt-1">Manage your students and see all progress</p>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center space-x-3 mb-2">
-                <Users className="w-6 h-6 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Total Students</h3>
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{totalStudents || 0}</p>
-              <p className="text-sm text-gray-600 mt-1">Active trainees</p>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center space-x-3 mb-2">
-                <Book className="w-6 h-6 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Reports</h3>
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{pendingReports || 0}</p>
-              <p className="text-sm text-gray-600 mt-1">Pending reviews</p>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center space-x-3 mb-2">
-                <FileCheck className="w-6 h-6 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Evaluations</h3>
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{completedEvals || 0}</p>
-              <p className="text-sm text-gray-600 mt-1">Completed this semester</p>
-            </div>
-          </div>
-
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Student List */}
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-gray-900">Students</h2>
-                    <Link href="/students" className="flex items-center space-x-2 text-blue-600 hover:text-blue-700">
-                      <UserPlus className="w-5 h-5" />
-                      <span>Manage Students</span>
-                    </Link>
-                  </div>
-                </div>
-                <div className="p-6">
-                  <div className="space-y-4">
-                    {students && students.length > 0 ? (
-                      students.slice(0, 5).map(student => (
-                        <div key={student.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div>
-                            <h3 className="font-medium text-gray-900">
-                              {student.name || student.email?.split('@')[0] || `Student ${student.id}`}
-                            </h3>
-                            <p className="text-sm text-gray-600">{student.email || 'No email'}</p>
-                          </div>
-                          <div className="flex items-center space-x-4">
-                            <div className="flex items-center">
-                              <div className="w-24 bg-gray-200 rounded-full h-2">
-                                <div
-                                  className="bg-blue-600 h-2 rounded-full"
-                                  style={{ width: `${studentProgress[student.id] || 0}%` }}
-                                ></div>
-                              </div>
-                              <span className="ml-2 text-sm text-gray-600">{studentProgress[student.id] || 0}%</span>
-                            </div>
-                            {classrooms.length > 0 && (
-                              <Link
-                                href={`/companies/${classrooms[0]?.id}`}
-                                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                              >
-                                View Details
-                              </Link>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-center text-gray-500 py-4">No students found</p>
-                    )}
-
-                    {students.length > 5 && (
-                      <div className="text-center mt-2">
-                        <Link href="/companies" className="text-blue-600 hover:text-blue-700 text-sm">
-                          View all students
-                        </Link>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* Right Column - Schedule & Actions */}
-            <div className="space-y-6">
-              {/* Upcoming Meetings */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex items-center space-x-3">
-                    <Video className="w-6 h-6 text-blue-600" />
-                    <h2 className="text-lg font-semibold text-gray-900">Upcoming Meetings</h2>
-                  </div>
-                </div>
-                <div className="p-6">
-                  {meetings && meetings.length > 0 ? (
-                    meetings.slice(0, 3).map(meeting => (
-                      <div key={meeting.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-3">
+              <div className="p-6">
+                <div className="space-y-4">
+                  {students && students.length > 0 ? (
+                    students.slice(0, 5).map(student => (
+                      <div key={student.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                         <div>
-                          <h3 className="font-medium text-gray-900">{meeting.title || 'Untitled Meeting'}</h3>
-                          <p className="text-sm text-gray-600">{formatDate(meeting.date)} at {meeting.time || 'TBD'}</p>
+                          <h3 className="font-medium text-gray-900">
+                            {student.name || student.email?.split('@')[0] || `Student ${student.id}`}
+                          </h3>
+                          <p className="text-sm text-gray-600">{student.email || 'No email'}</p>
                         </div>
-                        {meeting.meetingUrl && (
-                          <a
-                            href={meeting.meetingUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                          >
-                            Join
-                          </a>
-                        )}
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center">
+                            <div className="w-24 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-blue-600 h-2 rounded-full"
+                                style={{ width: `${studentProgress[student.id] || 0}%` }}
+                              ></div>
+                            </div>
+                            <span className="ml-2 text-sm text-gray-600">{studentProgress[student.id] || 0}%</span>
+                          </div>
+                          {classrooms.length > 0 && (
+                            <Link
+                              href={`/companies/${classrooms[0]?.id}`}
+                              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                            >
+                              View Details
+                            </Link>
+                          )}
+                        </div>
                       </div>
                     ))
                   ) : (
-                    <p className="text-center text-gray-500 py-4">No upcoming meetings</p>
+                    <p className="text-center text-gray-500 py-4">No students found</p>
                   )}
 
-                  {meetings.length > 3 && (
+                  {students.length > 5 && (
                     <div className="text-center mt-2">
                       <Link href="/companies" className="text-blue-600 hover:text-blue-700 text-sm">
-                        View all meetings
+                        View all students
                       </Link>
                     </div>
                   )}
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* Quick Actions */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex items-center space-x-3">
-                    <Bell className="w-6 h-6 text-blue-600" />
-                    <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
+          {/* Right Column - Schedule & Actions */}
+          <div className="space-y-6">
+            {/* Upcoming Meetings */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center space-x-3">
+                  <Video className="w-6 h-6 text-blue-600" />
+                  <h2 className="text-lg font-semibold text-gray-900">Upcoming Meetings</h2>
+                </div>
+              </div>
+              <div className="p-6">
+                {meetings && meetings.length > 0 ? (
+                  meetings.slice(0, 3).map(meeting => (
+                    <div key={meeting.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-3">
+                      <div>
+                        <h3 className="font-medium text-gray-900">{meeting.title || 'Untitled Meeting'}</h3>
+                        <p className="text-sm text-gray-600">{formatDate(meeting.date)} at {meeting.time || 'TBD'}</p>
+                      </div>
+                      {meeting.meetingUrl && (
+                        <a
+                          href={meeting.meetingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        >
+                          Join
+                        </a>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-gray-500 py-4">No upcoming meetings</p>
+                )}
+
+                {meetings.length > 3 && (
+                  <div className="text-center mt-2">
+                    <Link href="/companies" className="text-blue-600 hover:text-blue-700 text-sm">
+                      View all meetings
+                    </Link>
                   </div>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center space-x-3">
+                  <Bell className="w-6 h-6 text-blue-600" />
+                  <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
                 </div>
-                <div className="p-6 space-y-4">
-                  <Link href="/companies" className="block w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-center">
-                    Manage Classrooms
-                  </Link>
-                  <Link href="/reports" className="block w-full border border-blue-600 text-blue-600 px-4 py-2 rounded-md hover:bg-blue-50 transition-colors text-center">
-                    Review Reports
-                  </Link>
-                  <Link href="/students" className="block w-full border border-blue-600 text-blue-600 px-4 py-2 rounded-md hover:bg-blue-50 transition-colors text-center">
-                    View All Students
-                  </Link>
-                </div>
+              </div>
+              <div className="p-6 space-y-4">
+                <Link href="/companies" className="block w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-center">
+                  Manage Classrooms
+                </Link>
+                <Link href="/reports" className="block w-full border border-blue-600 text-blue-600 px-4 py-2 rounded-md hover:bg-blue-50 transition-colors text-center">
+                  Review Reports
+                </Link>
+                <Link href="/students" className="block w-full border border-blue-600 text-blue-600 px-4 py-2 rounded-md hover:bg-blue-50 transition-colors text-center">
+                  View All Students
+                </Link>
               </div>
             </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
