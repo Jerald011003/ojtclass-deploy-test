@@ -20,7 +20,6 @@ export default function HomeLayout({
   const router = useRouter();
   const pathname = usePathname();
   
-  // Skip authentication checks if we're on the role-selection page
   const isRoleSelectionPage = pathname === "/role-selection";
   
   useEffect(() => {
@@ -28,13 +27,11 @@ export default function HomeLayout({
   }, []);
 
   useEffect(() => {
-    // Don't redirect if already on role-selection page
     if (isClient && isLoaded && user && !user.unsafeMetadata.role && !isRoleSelectionPage) {
       router.push('/role-selection');
     }
   }, [isLoaded, user, router, isClient, isRoleSelectionPage]);
   
-  // Skip loading screen if on role-selection
   if (isRoleSelectionPage) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -44,7 +41,6 @@ export default function HomeLayout({
     );
   }
   
-  // Regular authentication flow for non-role-selection pages
   if (!isClient || !isLoaded) {
     return <Loading />;
   }
@@ -55,18 +51,11 @@ export default function HomeLayout({
   
   const userRole = user.unsafeMetadata.role as string | undefined;
   
+  // Fix: Don't wrap the professor content in a div that overrides its layout
   if (userRole === 'professor') {
-    return (
-      <div className="min-h-screen">
-        {professor}
-      </div>
-    );
+    return <>{professor}</>;  // Simply return the professor slot
   } else if (userRole === 'student') {
-    return (
-      <div className="min-h-screen">
-        {student}
-      </div>
-    );
+    return <>{student}</>;    // Simply return the student slot
   }
   
   return (
