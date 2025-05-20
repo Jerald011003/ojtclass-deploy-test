@@ -2,11 +2,9 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
+import { SignInButton, SignUpButton } from "@clerk/nextjs";
 
 const Navbar = () => {
-  const { isSignedIn } = useUser();
-
   return (
     <nav className="fixed w-full bg-white/95 backdrop-blur-sm z-50 shadow">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -37,28 +35,17 @@ const Navbar = () => {
           </div>
 
           {/* Right - Navigation */}
-          <div className="flex items-center space-x-6">
-            {isSignedIn ? (
-              <>
-                <Link href="/dashboard" className="text-gray-600 hover:text-blue-600 font-medium transition-colors duration-200">
-                  Dashboard
-                </Link>
-                <UserButton afterSignOutUrl="/" />
-              </>
-            ) : (
-              <div className="flex items-center space-x-4">
-                <SignInButton mode="modal">
-                  <button className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium transition-colors duration-200">
-                    Sign In
-                  </button>
-                </SignInButton>
-                <SignUpButton mode="modal">
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200">
-                    Sign Up
-                  </button>
-                </SignUpButton>
-              </div>
-            )}
+          <div className="flex items-center space-x-4">
+            <SignInButton mode="modal">
+              <button className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium transition-colors duration-200">
+                Sign In
+              </button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200">
+                Sign Up
+              </button>
+            </SignUpButton>
           </div>
         </div>
       </div>
