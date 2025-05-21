@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { PlusCircle, ArrowLeft, ArrowRight, Loader2, Trash2 } from "lucide-react";
-import StudentInviteCard from "../components/StudentInviteCard";
+import { Loader2, ArrowLeft, ArrowRight, Trash2 } from "lucide-react";
 import ProfNavbar from "../components/ProfNavbar";
 
 // Define interfaces for type safety
@@ -28,6 +27,7 @@ interface EnhancedStudent {
   email: string | null;
   name: string;
   classroom: string;
+  classroomId: number;
   progress: number;
   completedHours: number;
   requiredHours: number;
@@ -36,14 +36,14 @@ interface EnhancedStudent {
 export default function ProfStudentsPage() {
   const { userId, isLoaded } = useAuth();
   const router = useRouter();
-  const [showInviteCard, setShowInviteCard] = useState(false);
   const [displayStudents, setDisplayStudents] = useState<EnhancedStudent[]>([]);
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-const [studentToDelete, setStudentToDelete] = useState<EnhancedStudent | null>(null);
-const [showDeleteModal, setShowDeleteModal] = useState(false);
-const [isDeleting, setIsDeleting] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState<EnhancedStudent | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Check authentication
   useEffect(() => {
     if (isLoaded && !userId) {
@@ -58,6 +58,7 @@ const [isDeleting, setIsDeleting] = useState(false);
 
       try {
         setIsLoading(true);
+        setError(null);
 
         // Fetch the professor's classrooms
         const classroomsResponse = await fetch('/api/prof/companies/classrooms', {
@@ -128,6 +129,7 @@ const [isDeleting, setIsDeleting] = useState(false);
                   ? `${student.firstName} ${student.lastName}`
                   : student.email?.split('@')[0] || 'Unknown',
                 classroom: classroom.name,
+                classroomId: classroom.id,
                 progress: progressPercentage,
                 completedHours: completedHours,
                 requiredHours: requiredHours
@@ -141,7 +143,6 @@ const [isDeleting, setIsDeleting] = useState(false);
         }
 
         setDisplayStudents(Array.from(studentsMap.values()));
-        setError(null);
       } catch (error) {
         console.error('Error fetching students:', error);
         setError('Failed to fetch students. Please try again.');
@@ -156,49 +157,43 @@ const [isDeleting, setIsDeleting] = useState(false);
   }, [userId]);
 
   const openDeleteModal = (student: EnhancedStudent) => {
-  setStudentToDelete(student);
-  setShowDeleteModal(true);
-};
+    setStudentToDelete(student);
+    setShowDeleteModal(true);
+  };
 
-const closeDeleteModal = () => {
-  setShowDeleteModal(false);
-  setStudentToDelete(null);
-};
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setStudentToDelete(null);
+  };
 
-const handleDeleteStudent = async () => {
-  if (!studentToDelete) return;
-  
-  try {
-    setIsDeleting(true);
-    
-    // Find the classroom ID for this student
-    const classroom = classrooms.find(c => c.name === studentToDelete.classroom);
-    if (!classroom) {
-      throw new Error("Classroom not found for student");
+  const handleDeleteStudent = async () => {
+    if (!studentToDelete) return;
+
+    try {
+      setIsDeleting(true);
+
+      const response = await fetch(`/api/prof/classrooms/${studentToDelete.classroomId}/students/${studentToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to remove student');
+      }
+
+      // Remove student from state
+      setDisplayStudents(students =>
+        students.filter(s => s.id !== studentToDelete.id)
+      );
+
+      closeDeleteModal();
+    } catch (error) {
+      console.error('Failed to remove student:', error);
+      setError(error instanceof Error ? error.message : 'Failed to remove student');
+    } finally {
+      setIsDeleting(false);
     }
-    
-    const response = await fetch(`/api/prof/classrooms/${classroom.id}/students/${studentToDelete.id}`, {
-      method: 'DELETE',
-    });
-    
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.message || 'Failed to remove student');
-    }
-    
-    // Remove student from state
-    setDisplayStudents(students => 
-      students.filter(s => s.id !== studentToDelete.id)
-    );
-    
-    closeDeleteModal();
-  } catch (error) {
-    console.error('Failed to remove student:', error);
-    setError(error instanceof Error ? error.message : 'Failed to remove student');
-  } finally {
-    setIsDeleting(false);
-  }
-};
+  };
 
   if (!isLoaded) {
     return (
@@ -237,18 +232,7 @@ const handleDeleteStudent = async () => {
 
           <div className="bg-white shadow rounded-lg overflow-hidden">
             <div className="p-6 border-b border-gray-200">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <h2 className="text-lg font-medium">Students</h2>
-                <div className="mt-3 sm:mt-0">
-                  <button
-                    onClick={() => setShowInviteCard(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-flex items-center gap-2"
-                  >
-                    <PlusCircle className="w-4 h-4" />
-                    <span>Invite Student</span>
-                  </button>
-                </div>
-              </div>
+              <h2 className="text-lg font-medium">Students</h2>
             </div>
 
             {isLoading ? (
@@ -259,7 +243,6 @@ const handleDeleteStudent = async () => {
             ) : displayStudents.length === 0 ? (
               <div className="p-16 text-center">
                 <p className="text-gray-500">No students found in your classrooms.</p>
-                <p className="text-gray-500 mt-2">Invite students to get started.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -282,8 +265,8 @@ const handleDeleteStudent = async () => {
                         Hours
                       </th>
                       <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-      Actions
-    </th>
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -301,10 +284,11 @@ const handleDeleteStudent = async () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="w-full bg-gray-200 rounded-full h-2.5">
                             <div
-                              className={`h-2.5 rounded-full ${student.progress >= 70 ? 'bg-green-600' :
-                                  student.progress >= 40 ? 'bg-yellow-500' :
-                                    'bg-red-500'
-                                }`}
+                              className={`h-2.5 rounded-full ${
+                                student.progress >= 70 ? 'bg-green-600' : 
+                                student.progress >= 40 ? 'bg-yellow-500' : 
+                                'bg-red-500'
+                              }`}
                               style={{ width: `${student.progress}%` }}
                             ></div>
                           </div>
@@ -353,9 +337,44 @@ const handleDeleteStudent = async () => {
             )}
           </div>
 
-          {/* {showInviteCard && (
-            <StudentInviteCard onClose={() => setShowInviteCard(false)} />
-          )} */}
+          {showDeleteModal && studentToDelete && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                <div className="flex items-center mb-4">
+                  <Trash2 className="w-6 h-6 text-red-600 mr-3" />
+                  <h3 className="text-lg font-medium">Remove Student</h3>
+                </div>
+
+                <p className="mb-6">
+                  Are you sure you want to remove <span className="font-semibold">{studentToDelete.name}</span> from the classroom? This action cannot be undone.
+                </p>
+
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={closeDeleteModal}
+                    disabled={isDeleting}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteStudent}
+                    disabled={isDeleting}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-70 flex items-center"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Removing...
+                      </>
+                    ) : (
+                      'Remove Student'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

@@ -35,15 +35,11 @@ interface Report {
   dueDate?: string | null;
 }
 
-interface FeedbackInput {
-  feedback: string;
-  reportId: number;
-}
-
 export default function ReportsClientPage() {
   const { userId, isLoaded } = useAuth();
   const router = useRouter();
 
+  // State management
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
@@ -75,6 +71,7 @@ export default function ReportsClientPage() {
 
       try {
         setIsLoading(true);
+        setError(null);
         
         // First fetch classrooms to get the professor's classes
         const classroomsResponse = await fetch('/api/prof/companies/classrooms', {
@@ -100,10 +97,12 @@ export default function ReportsClientPage() {
         
         for (const classroom of professorClassrooms) {
           try {
+            console.log(`Fetching reports for classroom ${classroom.id}`);
             const reportsResponse = await fetch(`/api/prof/reports?classroomId=${classroom.id}`);
             
             if (reportsResponse.ok) {
               const classroomReports = await reportsResponse.json();
+              console.log(`Found ${classroomReports.length} reports for classroom ${classroom.id}`);
               
               // Transform the reports data to add classroom info
               const transformedReports = classroomReports.map((report: Report) => ({
@@ -112,33 +111,37 @@ export default function ReportsClientPage() {
               }));
               
               allReports = [...allReports, ...transformedReports];
+            } else {
+              console.error(`Error response from reports API for classroom ${classroom.id}:`, await reportsResponse.text());
             }
           } catch (error) {
             console.error(`Error fetching reports for classroom ${classroom.id}:`, error);
           }
         }
         
+        console.log(`Total reports fetched: ${allReports.length}`);
+        
         // Fetch student details for each report
         for (let i = 0; i < allReports.length; i++) {
-                  const report = allReports[i];
-                  if (!report) continue;
-                  
-                  try {
-                    const studentResponse = await fetch(`/api/prof/students/${report.studentId}`);
-                    
-                    if (studentResponse.ok) {
-                      const studentData = await studentResponse.json();
-                      report.student = {
-                        id: studentData.id,
-                        name: studentData.name || `Student ${studentData.id}`,
-                        email: studentData.email
-                      };
-                      report.submittedBy = studentData.name || studentData.email;
-                    }
-                  } catch (error) {
-                    console.error(`Error fetching student data for report ${report.id}:`, error);
-                  }
-                }
+          const report = allReports[i];
+          if (!report) continue;
+          
+          try {
+            const studentResponse = await fetch(`/api/prof/students/${report.studentId}`);
+            
+            if (studentResponse.ok) {
+              const studentData = await studentResponse.json();
+              report.student = {
+                id: studentData.id,
+                name: studentData.name || `Student ${studentData.id}`,
+                email: studentData.email
+              };
+              report.submittedBy = studentData.name || studentData.email;
+            }
+          } catch (error) {
+            console.error(`Error fetching student data for report ${report.id}:`, error);
+          }
+        }
         
         // Sort by newest first
         allReports.sort((a, b) => 
@@ -156,7 +159,6 @@ export default function ReportsClientPage() {
         };
         
         setStats(stats);
-        setError(null);
       } catch (error) {
         console.error('Error fetching reports:', error);
         setError('Failed to fetch reports. Please try again.');
@@ -468,20 +470,6 @@ export default function ReportsClientPage() {
             <div className="text-sm text-gray-500">
               Showing {filteredReports.length} of {reports.length} reports
             </div>
-            <div className="flex space-x-2">
-              <button 
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50"
-                disabled={true}
-              >
-                Previous
-              </button>
-              <button 
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50"
-                disabled={true}
-              >
-                Next
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -530,7 +518,7 @@ export default function ReportsClientPage() {
                   <User className="h-4 w-4 text-blue-600" />
                   <div>
                     <span className="block text-xs text-gray-500">Student</span>
-                    <span className="font-medium">{selectedReport.student?.name || `Student ${selectedReport.studentId}`}</span>
+                    <span className="font-medium">{selectedReport.submittedBy || `Student ${selectedReport.studentId}`}</span>
                   </div>
                 </div>
                 
