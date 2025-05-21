@@ -120,22 +120,25 @@ export default function ReportsClientPage() {
         
         // Fetch student details for each report
         for (let i = 0; i < allReports.length; i++) {
-          try {
-            const studentResponse = await fetch(`/api/prof/students/${allReports[i].studentId}`);
-            
-            if (studentResponse.ok) {
-              const studentData = await studentResponse.json();
-              allReports[i].student = {
-                id: studentData.id,
-                name: studentData.name || `Student ${studentData.id}`,
-                email: studentData.email
-              };
-              allReports[i].submittedBy = studentData.name || studentData.email;
-            }
-          } catch (error) {
-            console.error(`Error fetching student data for report ${allReports[i].id}:`, error);
-          }
-        }
+                  const report = allReports[i];
+                  if (!report) continue;
+                  
+                  try {
+                    const studentResponse = await fetch(`/api/prof/students/${report.studentId}`);
+                    
+                    if (studentResponse.ok) {
+                      const studentData = await studentResponse.json();
+                      report.student = {
+                        id: studentData.id,
+                        name: studentData.name || `Student ${studentData.id}`,
+                        email: studentData.email
+                      };
+                      report.submittedBy = studentData.name || studentData.email;
+                    }
+                  } catch (error) {
+                    console.error(`Error fetching student data for report ${report.id}:`, error);
+                  }
+                }
         
         // Sort by newest first
         allReports.sort((a, b) => 

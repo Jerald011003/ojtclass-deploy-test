@@ -14,24 +14,18 @@ interface Classroom {
   ojtHours?: number;
 }
 
-interface BasicStudent {
+interface Student {
   id: number;
   email: string | null;
   firstName?: string | null;
   lastName?: string | null;
   clerkId: string;
   createdAt: Date;
-  classrooms?: Classroom[];
 }
 
-interface StudentProgress {
+interface EnhancedStudent {
   id: number;
-  completedHours: number;
-  requiredHours: number;
-  progressPercentage: number;
-}
-
-interface EnhancedStudent extends BasicStudent {
+  email: string | null;
   name: string;
   classroom: string;
   progress: number;
@@ -57,12 +51,13 @@ export default function ProfStudentsPage() {
 
   // Fetch students data
   useEffect(() => {
-    async function fetchStudents() {
+    async function fetchData() {
       if (!userId) return;
 
       try {
         setIsLoading(true);
         
+        // Fetch the professor's classrooms
         const classroomsResponse = await fetch('/api/prof/companies/classrooms', {
           headers: { 'Cache-Control': 'no-cache' }
         });
@@ -84,50 +79,62 @@ export default function ProfStudentsPage() {
         
         // Fetch all students enrolled in these classrooms
         const studentsMap = new Map<number, EnhancedStudent>();
+        const processedStudents = new Set<number>();
         
         for (const classroom of professorClassrooms) {
-          const classroomDetailsResponse = await fetch(`/api/admin/companies/classrooms/${classroom.id}`);
-          
-          if (classroomDetailsResponse.ok) {
+          try {
+            // Fetch classroom details including students
+            const classroomDetailsResponse = await fetch(`/api/admin/companies/classrooms/${classroom.id}`);
+            
+            if (!classroomDetailsResponse.ok) {
+              console.error(`Failed to fetch details for classroom ${classroom.id}`);
+              continue;
+            }
+            
             const classroomDetails = await classroomDetailsResponse.json();
             const students = classroomDetails.students || [];
             
             // Process each student
             for (const student of students) {
               // Skip if already processed this student
-              if (studentsMap.has(student.id)) continue;
+              if (processedStudents.has(student.id)) continue;
+              processedStudents.add(student.id);
               
-              // Fetch progress data for each student
-              let progressData: StudentProgress = {
-                id: student.id,
-                completedHours: 0,
-                requiredHours: classroom.ojtHours || 600,
-                progressPercentage: 0
-              };
+              // Fetch progress data for this student in this classroom
+              let completedHours = 0;
+              let requiredHours = classroom.ojtHours || 600;
+              let progressPercentage = 0;
               
               try {
                 const progressResponse = await fetch(`/api/student/progress?studentId=${student.id}&classroomId=${classroom.id}`);
+                
                 if (progressResponse.ok) {
-                  progressData = await progressResponse.json();
+                  const progressData = await progressResponse.json();
+                  completedHours = progressData.completedHours || 0;
+                  requiredHours = progressData.requiredHours || classroom.ojtHours || 600;
+                  progressPercentage = progressData.progressPercentage || 0;
                 }
               } catch (error) {
                 console.error(`Error fetching progress for student ${student.id}:`, error);
               }
               
-              // Create enhanced student object
+              // Create enhanced student object with real data
               const enhancedStudent: EnhancedStudent = {
-                ...student,
+                id: student.id,
+                email: student.email,
                 name: student.firstName && student.lastName 
                   ? `${student.firstName} ${student.lastName}`
                   : student.email?.split('@')[0] || 'Unknown',
                 classroom: classroom.name,
-                progress: progressData.progressPercentage || 0,
-                completedHours: progressData.completedHours || 0,
-                requiredHours: progressData.requiredHours || classroom.ojtHours || 600
+                progress: progressPercentage,
+                completedHours: completedHours,
+                requiredHours: requiredHours
               };
               
               studentsMap.set(student.id, enhancedStudent);
             }
+          } catch (error) {
+            console.error(`Error processing classroom ${classroom.id}:`, error);
           }
         }
         
@@ -142,7 +149,7 @@ export default function ProfStudentsPage() {
     }
 
     if (userId) {
-      fetchStudents();
+      fetchData();
     }
   }, [userId]);
 
@@ -267,7 +274,7 @@ export default function ProfStudentsPage() {
             {displayStudents.length > 0 && (
               <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                 <div className="text-sm text-gray-700">
-                  Showing 1 to {displayStudents.length} of {displayStudents.length} students
+                  Showing {displayStudents.length} students
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
