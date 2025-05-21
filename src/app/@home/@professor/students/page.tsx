@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { PlusCircle, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { PlusCircle, ArrowLeft, ArrowRight, Loader2, Trash2 } from "lucide-react";
 import StudentInviteCard from "../components/StudentInviteCard";
 import ProfNavbar from "../components/ProfNavbar";
 
@@ -41,7 +41,9 @@ export default function ProfStudentsPage() {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+const [studentToDelete, setStudentToDelete] = useState<EnhancedStudent | null>(null);
+const [showDeleteModal, setShowDeleteModal] = useState(false);
+const [isDeleting, setIsDeleting] = useState(false);
   // Check authentication
   useEffect(() => {
     if (isLoaded && !userId) {
@@ -56,58 +58,58 @@ export default function ProfStudentsPage() {
 
       try {
         setIsLoading(true);
-        
+
         // Fetch the professor's classrooms
         const classroomsResponse = await fetch('/api/prof/companies/classrooms', {
           headers: { 'Cache-Control': 'no-cache' }
         });
-        
+
         if (!classroomsResponse.ok) {
           throw new Error('Failed to fetch classrooms');
         }
-        
+
         const classroomsData = await classroomsResponse.json();
         const professorClassrooms = classroomsData.classrooms || [];
         setClassrooms(professorClassrooms);
-        
+
         // If no classrooms, no students to fetch
         if (professorClassrooms.length === 0) {
           setDisplayStudents([]);
           setIsLoading(false);
           return;
         }
-        
+
         // Fetch all students enrolled in these classrooms
         const studentsMap = new Map<number, EnhancedStudent>();
         const processedStudents = new Set<number>();
-        
+
         for (const classroom of professorClassrooms) {
           try {
             // Fetch classroom details including students
             const classroomDetailsResponse = await fetch(`/api/admin/companies/classrooms/${classroom.id}`);
-            
+
             if (!classroomDetailsResponse.ok) {
               console.error(`Failed to fetch details for classroom ${classroom.id}`);
               continue;
             }
-            
+
             const classroomDetails = await classroomDetailsResponse.json();
             const students = classroomDetails.students || [];
-            
+
             // Process each student
             for (const student of students) {
               // Skip if already processed this student
               if (processedStudents.has(student.id)) continue;
               processedStudents.add(student.id);
-              
+
               // Fetch progress data for this student in this classroom
               let completedHours = 0;
               let requiredHours = classroom.ojtHours || 600;
               let progressPercentage = 0;
-              
+
               try {
                 const progressResponse = await fetch(`/api/student/progress?studentId=${student.id}&classroomId=${classroom.id}`);
-                
+
                 if (progressResponse.ok) {
                   const progressData = await progressResponse.json();
                   completedHours = progressData.completedHours || 0;
@@ -117,12 +119,12 @@ export default function ProfStudentsPage() {
               } catch (error) {
                 console.error(`Error fetching progress for student ${student.id}:`, error);
               }
-              
+
               // Create enhanced student object with real data
               const enhancedStudent: EnhancedStudent = {
                 id: student.id,
                 email: student.email,
-                name: student.firstName && student.lastName 
+                name: student.firstName && student.lastName
                   ? `${student.firstName} ${student.lastName}`
                   : student.email?.split('@')[0] || 'Unknown',
                 classroom: classroom.name,
@@ -130,14 +132,14 @@ export default function ProfStudentsPage() {
                 completedHours: completedHours,
                 requiredHours: requiredHours
               };
-              
+
               studentsMap.set(student.id, enhancedStudent);
             }
           } catch (error) {
             console.error(`Error processing classroom ${classroom.id}:`, error);
           }
         }
-        
+
         setDisplayStudents(Array.from(studentsMap.values()));
         setError(null);
       } catch (error) {
@@ -152,6 +154,51 @@ export default function ProfStudentsPage() {
       fetchData();
     }
   }, [userId]);
+
+  const openDeleteModal = (student: EnhancedStudent) => {
+  setStudentToDelete(student);
+  setShowDeleteModal(true);
+};
+
+const closeDeleteModal = () => {
+  setShowDeleteModal(false);
+  setStudentToDelete(null);
+};
+
+const handleDeleteStudent = async () => {
+  if (!studentToDelete) return;
+  
+  try {
+    setIsDeleting(true);
+    
+    // Find the classroom ID for this student
+    const classroom = classrooms.find(c => c.name === studentToDelete.classroom);
+    if (!classroom) {
+      throw new Error("Classroom not found for student");
+    }
+    
+    const response = await fetch(`/api/prof/classrooms/${classroom.id}/students/${studentToDelete.id}`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.message || 'Failed to remove student');
+    }
+    
+    // Remove student from state
+    setDisplayStudents(students => 
+      students.filter(s => s.id !== studentToDelete.id)
+    );
+    
+    closeDeleteModal();
+  } catch (error) {
+    console.error('Failed to remove student:', error);
+    setError(error instanceof Error ? error.message : 'Failed to remove student');
+  } finally {
+    setIsDeleting(false);
+  }
+};
 
   if (!isLoaded) {
     return (
@@ -181,13 +228,13 @@ export default function ProfStudentsPage() {
               View progress of students in your classrooms
             </p>
           </div>
-          
+
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
               {error}
             </div>
           )}
-          
+
           <div className="bg-white shadow rounded-lg overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -203,7 +250,7 @@ export default function ProfStudentsPage() {
                 </div>
               </div>
             </div>
-            
+
             {isLoading ? (
               <div className="p-16 text-center">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
@@ -234,6 +281,9 @@ export default function ProfStudentsPage() {
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Hours
                       </th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+      Actions
+    </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -250,12 +300,11 @@ export default function ProfStudentsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="w-full bg-gray-200 rounded-full h-2.5">
-                            <div 
-                              className={`h-2.5 rounded-full ${
-                                student.progress >= 70 ? 'bg-green-600' : 
-                                student.progress >= 40 ? 'bg-yellow-500' : 
-                                'bg-red-500'
-                              }`} 
+                            <div
+                              className={`h-2.5 rounded-full ${student.progress >= 70 ? 'bg-green-600' :
+                                  student.progress >= 40 ? 'bg-yellow-500' :
+                                    'bg-red-500'
+                                }`}
                               style={{ width: `${student.progress}%` }}
                             ></div>
                           </div>
@@ -264,13 +313,21 @@ export default function ProfStudentsPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {student.completedHours}/{student.requiredHours}
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                          <button
+                            onClick={() => openDeleteModal(student)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Remove
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             )}
-            
+
             {displayStudents.length > 0 && (
               <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                 <div className="text-sm text-gray-700">
@@ -296,9 +353,9 @@ export default function ProfStudentsPage() {
             )}
           </div>
 
-          {showInviteCard && (
+          {/* {showInviteCard && (
             <StudentInviteCard onClose={() => setShowInviteCard(false)} />
-          )}
+          )} */}
         </div>
       </main>
     </div>

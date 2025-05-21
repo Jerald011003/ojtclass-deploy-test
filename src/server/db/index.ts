@@ -6,7 +6,7 @@ import * as schema from "./schema";
 // Database connection configuration
 const connectionConfig = {
   // Enable SSL for Neon database
-  ssl: true,
+  ssl: false,
   // Maximum number of concurrent connections
   max: env.NODE_ENV === "production" ? 20 : 10,
   // Idle connection timeout (in seconds)
